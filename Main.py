@@ -1,11 +1,18 @@
-import os
+import os, sys, mutagen
 import tkinter as tk
 from tkinter import filedialog
 import pygame
 
+print(sys.executable)
 #audio
 pygame.mixer.init()
+paused = False
+started = False
 
+songLength = 0
+startOffset = 0
+dragging = False
+elapsed = startOffset + pygame.mixer.music.get_pos() / 1000
 #playlist
 playlist = ["Songs/ChennelRemix.mp3", "Songs/Drake-Gods-Plan.mp3"]
 current = len(playlist) - 1
@@ -19,11 +26,23 @@ def addSong():
 
 # moving through the playlist
 def play():
+    global paused, started
+    if not playlist:
+        return
     path = playlist[0] if playlist else None
     if path:
         pygame.mixer.music.load(playlist[current])
         pygame.mixer.music.play()
         status.config(text=f"Playing: {os.path.basename(playlist[current])}")
+
+        paused = False
+        started = True
+
+        startOffset = 0
+        info = mutagen.File(playlist[current])
+        songLength = info.info.length if info else 0
+        progress.config(to=max(songLength, 1))
+        progress.set(0)
 def playSelected(event):
     global current
     selection = listbox.curselection()
@@ -57,7 +76,39 @@ def togglePause():
         pygame.mixer.music.unpause()
 def setVolume(value):
     pygame.mixer.music.set_volume(float(value) / 100)
+def checkSongEnd():
+    if started and not pygame.mixer.music.get_busy():
+        nextSong()
+    root.after(1000, checkSongEnd)
 
+
+    # progress bar
+def start_drag(event):
+    global dragging
+    dragging = True
+def seek(event):
+    global dragging
+    dragging = False
+    if not started:
+        return
+    pos = progress.get()
+    pygame.mixer.music.play(start=pos)
+    startOffset = pos
+    if paused:
+        pygame.mixer.music.pause()
+def update_progress():
+    if started and not dragging:
+        elapsed = startOffset + pygame.mixer.music.get_pos() / 1000
+        progress.set(elapsed)
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        time_label.config(text=f"{minutes}:{seconds:02d}")
+    elif dragging:
+        elapsed = progress.get()
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        time_label.config(text=f"{minutes}:{seconds:02d}")
+    root.after(500, update_progress)
 
 # main loop
 
@@ -88,10 +139,23 @@ tk.Button(root, text="Previous Song", command=previousSong,highlightbackground="
 tk.Button(root, text="Toggle Pause",  command=togglePause,highlightbackground="white", bg="gray7", fg="white").place(relx=0.5, rely=0.8, anchor=tk.CENTER)
 tk.Button(root, text="Add Song",      command=addSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.8, anchor=tk.CENTER)
 
+
+progress = tk.Scale(root, from_=0, to=100, orient="horizontal",
+                    showvalue=False, length=400,
+                    bg="gray12", troughcolor="gray20", highlightthickness=0)
+progress.bind("<Button-1>", start_drag)
+progress.bind("<ButtonRelease-1>", seek)
+progress.place(relx=0.5, rely=0.52, anchor=tk.CENTER)
+
+time_label = tk.Label(root, text="0:00", bg="gray12", fg="white")
+time_label.place(relx=0.5, rely=0.57, anchor=tk.CENTER)
+
 if len(playlist) > 0:
     for song in playlist:
         listbox.insert(tk.END, os.path.basename(song))
 
+update_progress()
+checkSongEnd()
 root.mainloop()
 
 
