@@ -8,7 +8,7 @@ print(sys.executable)
 pygame.mixer.init()
 paused = False
 started = False
-
+pos = 0
 songLength = 0
 startOffset = 0
 dragging = False
@@ -26,7 +26,7 @@ def addSong():
 
 # moving through the playlist
 def play():
-    global paused, started
+    global paused, started, startOffset, songLength
     if not playlist:
         return
     path = playlist[0] if playlist else None
@@ -87,7 +87,7 @@ def start_drag(event):
     global dragging
     dragging = True
 def seek(event):
-    global dragging
+    global dragging, startOffset
     dragging = False
     if not started:
         return
@@ -97,17 +97,15 @@ def seek(event):
     if paused:
         pygame.mixer.music.pause()
 def update_progress():
-    if started and not dragging:
-        elapsed = startOffset + pygame.mixer.music.get_pos() / 1000
-        progress.set(elapsed)
-        minutes = int(elapsed // 60)
-        seconds = int(elapsed % 60)
-        time_label.config(text=f"{minutes}:{seconds:02d}")
-    elif dragging:
-        elapsed = progress.get()
-        minutes = int(elapsed // 60)
-        seconds = int(elapsed % 60)
-        time_label.config(text=f"{minutes}:{seconds:02d}")
+    pos = pygame.mixer.music.get_pos()
+    global paused, dragging, elapsed, startOffset
+    if started and not dragging and not paused:
+        pos = pygame.mixer.music.get_pos() 
+        if pos >= 0:
+            progress.set(startOffset + pos / 1000)
+
+    elapsed = progress.get()
+    time_label.config(text=f"{int(elapsed // 60)}:{int(elapsed % 60):02d}")
     root.after(500, update_progress)
 
 # main loop
