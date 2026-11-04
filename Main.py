@@ -1,7 +1,9 @@
+import random
 import os, sys, mutagen
 import tkinter as tk
 from tkinter import filedialog
 import pygame
+from PIL import Image, ImageTk
 
 print(sys.executable)
 #audio
@@ -14,8 +16,27 @@ startOffset = 0
 dragging = False
 elapsed = startOffset + pygame.mixer.music.get_pos() / 1000
 #playlist
-playlist = ["Songs/ChennelRemix.mp3", "Songs/Drake-Gods-Plan.mp3"]
-current = len(playlist) - 1
+
+
+
+
+
+musicFolder = "Songs"
+playlist = [
+    os.path.join(musicFolder, file)
+    for file in os.listdir(musicFolder)
+    if file.lower().endswith(".mp3")
+]
+current = 0
+# Joy
+folder = "images"
+
+pictures = [
+    file for file in os.listdir(folder)
+    if file.lower().endswith((".png", ".gif"))
+]
+
+random_picture = random.choice(pictures)
 
 #functions
 def addSong():
@@ -29,6 +50,7 @@ def play():
     global paused, started, startOffset, songLength
     if not playlist:
         return
+    
     path = playlist[0] if playlist else None
     if path:
         pygame.mixer.music.load(playlist[current])
@@ -43,6 +65,7 @@ def play():
         songLength = info.info.length if info else 0
         progress.config(to=max(songLength, 1))
         progress.set(0)
+        changeImage()
 def playSelected(event):
     global current
     selection = listbox.curselection()
@@ -107,7 +130,16 @@ def update_progress():
     elapsed = progress.get()
     time_label.config(text=f"{int(elapsed // 60)}:{int(elapsed % 60):02d}")
     root.after(500, update_progress)
+def changeImage():
+    global img
 
+    random_picture = random.choice(pictures)
+
+    img = Image.open(os.path.join(folder, random_picture))
+    img.thumbnail((200, 200))
+    img = ImageTk.PhotoImage(img)
+
+    image_label.config(image=img)
 # main loop
 
 root = tk.Tk()
@@ -116,6 +148,12 @@ root.geometry("800x600")
 root.configure(bg="gray12")
 
 #widgets
+img = Image.open(os.path.join(folder, random_picture))
+img.thumbnail((150, 150))
+img = ImageTk.PhotoImage(img)
+image_label = tk.Label(root, image=img, bg="gray12")
+image_label.place(relx=0.1, rely=0.15, anchor=tk.CENTER)
+
 status = tk.Label(root, text="No song playing", bg="gray7", fg="white")
 status.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
 
