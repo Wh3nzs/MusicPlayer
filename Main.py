@@ -28,11 +28,13 @@ playlist = [
     if file.lower().endswith(".mp3")
 ]
 current = 0
+
+
 # Joy
-folder = "images"
+pictureFolder = "images"
 
 pictures = [
-    file for file in os.listdir(folder)
+    file for file in os.listdir(pictureFolder)
     if file.lower().endswith((".png", ".gif"))
 ]
 
@@ -135,7 +137,7 @@ def changeImage():
 
     random_picture = random.choice(pictures)
 
-    img = Image.open(os.path.join(folder, random_picture))
+    img = Image.open(os.path.join(pictureFolder, random_picture))
     img.thumbnail((200, 200))
     img = ImageTk.PhotoImage(img)
 
@@ -148,7 +150,7 @@ root.geometry("800x600")
 root.configure(bg="gray12")
 
 #widgets
-img = Image.open(os.path.join(folder, random_picture))
+img = Image.open(os.path.join(pictureFolder, random_picture))
 img.thumbnail((150, 150))
 img = ImageTk.PhotoImage(img)
 image_label = tk.Label(root, image=img, bg="gray12")
