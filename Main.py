@@ -16,7 +16,7 @@ startOffset = 0
 dragging = False
 elapsed = startOffset + pygame.mixer.music.get_pos() / 1000
 #playlist
-
+shuffled = False
 
 
 
@@ -103,13 +103,23 @@ def togglePause():
     else:
         pygame.mixer.music.unpause()
         paused = False
+def toggleShuffle():
+    global playlist, current, shuffled
+    shuffled = not shuffled
+
+    if shuffled and len(playlist) > 1:
+        current_song = playlist[current]
+        random.shuffle(playlist)
+        current = playlist.index(current_song)
 
 def setVolume(value):
     pygame.mixer.music.set_volume(float(value) / 100)
 def checkSongEnd():
-    if started and not paused and not pygame.mixer.music.get_busy():
+    if started and not paused and not shuffled and not pygame.mixer.music.get_busy():
         nextSong()
-
+    elif started and not paused and shuffled and not pygame.mixer.music.get_busy():
+        nextSong()
+ 
     root.after(1000, checkSongEnd)
 
 
@@ -213,13 +223,14 @@ volume_label.place(relx=0.5, rely=0.84, anchor=tk.CENTER)
 volume.set(20)
 volume.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
 
+tk
 tk.Button(root, text="Play",          command=play,highlightbackground="white", bg="gray7", fg="white").place(relx=0.5, rely=0.75, anchor=tk.CENTER)
 tk.Button(root, text="Next Song",     command=nextSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.60, rely=0.75, anchor=tk.CENTER)
 tk.Button(root, text="Previous Song", command=previousSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.40, rely=0.75, anchor=tk.CENTER)
 tk.Button(root, text="Toggle Pause",  command=togglePause,highlightbackground="white", bg="gray7", fg="white").place(relx=0.5, rely=0.8, anchor=tk.CENTER)
 tk.Button(root, text="Add Song",      command=addSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.8, anchor=tk.CENTER)
 tk.Button(root, text="Choose Folder", command=chooseFolder,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.87, anchor=tk.CENTER)
-
+tk.Button(root, text="Toggle Shuffle", command=toggleShuffle,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.94, anchor=tk.CENTER)
 progress = tk.Scale(root, from_=0, to=100, orient="horizontal",
                     showvalue=False, length=400,
                     bg="gray12", troughcolor="gray20", highlightthickness=0)
