@@ -95,15 +95,21 @@ def previousSong():
 
 # song settings
 def togglePause():
-    if pygame.mixer.music.get_busy():
+    global paused
+
+    if not paused:
         pygame.mixer.music.pause()
+        paused = True
     else:
         pygame.mixer.music.unpause()
+        paused = False
+
 def setVolume(value):
     pygame.mixer.music.set_volume(float(value) / 100)
 def checkSongEnd():
-    if started and not pygame.mixer.music.get_busy():
+    if started and not paused and not pygame.mixer.music.get_busy():
         nextSong()
+
     root.after(1000, checkSongEnd)
 
 
@@ -142,6 +148,42 @@ def changeImage():
     img = ImageTk.PhotoImage(img)
 
     image_label.config(image=img)
+
+def chooseFolder():
+    global current, started, paused
+    folder = filedialog.askdirectory(
+        initialdir=os.path.expanduser("~/Music"),
+        title="Choose your music folder"
+    )
+    if not folder:
+        return  # user cancelled the dialog
+
+    songs = sorted(
+        os.path.join(folder, file)
+        for file in os.listdir(folder)
+        if file.lower().endswith(".mp3")
+    )
+    if not songs:
+        status.config(text="No .mp3 files in that folder")
+        return
+
+    # stop the old song and reset the flags, otherwise checkSongEnd
+    # sees the stopped music and starts playing the next song by itself
+    pygame.mixer.music.stop()
+    started = False
+    paused = False
+
+    playlist[:] = songs   # replace the contents in place so every function sees the new list
+    current = 0
+
+    listbox.delete(1, tk.END)  # keep the "Songs:" label at index 0
+    for song in playlist:
+        listbox.insert(tk.END, os.path.basename(song))
+
+    status.config(text="No song playing")
+    progress.set(0)
+
+
 # main loop
 
 root = tk.Tk()
@@ -176,7 +218,7 @@ tk.Button(root, text="Next Song",     command=nextSong,highlightbackground="whit
 tk.Button(root, text="Previous Song", command=previousSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.40, rely=0.75, anchor=tk.CENTER)
 tk.Button(root, text="Toggle Pause",  command=togglePause,highlightbackground="white", bg="gray7", fg="white").place(relx=0.5, rely=0.8, anchor=tk.CENTER)
 tk.Button(root, text="Add Song",      command=addSong,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.8, anchor=tk.CENTER)
-
+tk.Button(root, text="Choose Folder", command=chooseFolder,highlightbackground="white", bg="gray7", fg="white").place(relx=0.1, rely=0.87, anchor=tk.CENTER)
 
 progress = tk.Scale(root, from_=0, to=100, orient="horizontal",
                     showvalue=False, length=400,
